@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="robots" content="noindex">
+  <title>モニター写真撮影</title>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+      background: #f3f5f7;
+      color: #1c2733;
+      font-size: 18px;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 20px 20px 60px; }
+    h1 { font-size: 24px; margin: 8px 0 24px; }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    p { line-height: 1.7; margin: 0 0 14px; }
+    label.title { display: block; font-weight: 600; margin: 0 0 10px; }
+    input[type="text"] {
+      width: 100%;
+      font-size: 28px;
+      padding: 14px 16px;
+      border: 2px solid #c5ced8;
+      border-radius: 12px;
+      letter-spacing: 2px;
+    }
+    input:focus { outline: none; border-color: #1a73e8; }
+    .btn {
+      display: block;
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 18px;
+      font-size: 22px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+    }
+    .btn-primary { background: #1a73e8; color: #fff; }
+    .btn-primary:active { background: #1558b0; }
+    .btn-sub { background: #e4e9ee; color: #1c2733; font-size: 18px; padding: 14px; }
+    .btn-shoot { background: #0b8043; color: #fff; font-size: 26px; padding: 22px; }
+    .btn-shoot:active { background: #086034; }
+    .btn-shoot:disabled { background: #9db8a8; }
+    .error { color: #c5221f; margin: 10px 0; min-height: 1.4em; font-weight: 600; }
+    .small { color: #50606f; font-size: 14px; }
+
+    .id-box {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      background: #e8f0fe;
+      border-radius: 12px;
+      padding: 10px 16px;
+      margin-bottom: 14px;
+    }
+    .id-box small { color: #50606f; font-size: 14px; white-space: nowrap; }
+    .id-box strong { font-size: 30px; letter-spacing: 2px; word-break: break-all; }
+
+    /* カメラ映像と人型の枠 */
+    .stage-outer { display: flex; justify-content: center; margin-bottom: 14px; }
+    .stage {
+      position: relative;
+      width: 100%;
+      height: 300px;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .stage video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .stage svg.guide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .guide .under { fill: none; stroke: rgba(0,0,0,.55); stroke-width: 7; stroke-linejoin: round; }
+    .guide .over  { fill: none; stroke: #fff; stroke-width: 3; stroke-dasharray: 10 7; stroke-linejoin: round; }
+    .stage .msg {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+      font-size: 17px;
+      line-height: 1.6;
+    }
+    .stage .flash {
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+    }
+    .stage .flash.on { opacity: .85; transition: none; }
+
+    .labels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+    .labels button {
+      border: 2px solid #c5ced8;
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 4px;
+      font-size: 20px;
+      font-weight: 600;
+      color: #1c2733;
+    }
+    .labels button.on { border-color: #0b8043; background: #e6f4ea; color: #0b8043; }
+    #fileInput { display: none; }
+    #fallbackBtn { margin-top: 10px; }
+
+    .list { list-style: none; padding: 0; margin: 0; }
+    .list li {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid #e4e9ee;
+    }
+    .list li:last-child { border-bottom: none; }
+    .list img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; background: #ddd; }
+    .list .info { flex: 1; min-width: 0; }
+    .list .name { font-size: 15px; word-break: break-all; }
+    .list .st { font-size: 15px; font-weight: 700; }
+    .st.sending { color: #b06000; }
+    .st.done { color: #0b8043; }
+    .st.fail { color: #c5221f; }
+    .empty { color: #7a8794; font-size: 16px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 画面：入口アプリと接続中 -->
+  <div id="screenWait">
+    <h1>モニター写真撮影</h1>
+    <div class="card"><p>入口アプリと接続しています…</p></div>
+  </div>
+
+  <!-- 画面：入口アプリとつながらなかった -->
+  <div id="screenNoBridge" class="hidden">
+    <h1>モニター写真撮影</h1>
+    <div class="card">
+      <p><strong>入口アプリとつながっていません。</strong></p>
+      <p>このページは、入口アプリ（GASのURL）の「撮影画面を開く」ボタンから開いてください。<br>
+         このタブを閉じて、入口アプリから開き直してください。</p>
+      <p class="small" id="bridgeDetail"></p>
+    </div>
+  </div>
+
+  <!-- 画面1：顧客ID入力 -->
+  <div id="screenId" class="hidden">
+    <h1>モニター写真撮影</h1>
+    <div class="card">
+      <label class="title" for="customerId">顧客ID</label>
+      <input type="text" id="customerId" inputmode="numeric" autocomplete="off"
+             autocapitalize="off" autocorrect="off" placeholder="例：12345">
+      <div class="error" id="idError"></div>
+      <button class="btn btn-primary" id="startBtn">撮影を始める</button>
+    </div>
+  </div>
+
+  <!-- 画面2：撮影 -->
+  <div id="screenShoot" class="hidden">
+    <div class="card">
+      <div class="id-box">
+        <small>撮影中の顧客ID</small>
+        <strong id="idDisplay"></strong>
+      </div>
+
+      <div class="stage-outer">
+        <div class="stage" id="stage">
+          <video id="video" playsinline autoplay muted></video>
+
+          <!-- 人型の枠（写真には写りません） -->
+          <svg class="guide" id="guideFront" viewBox="0 0 200 400" preserveAspectRatio="xMidYMid meet">
+            <g class="under">
+              <ellipse cx="100" cy="46" rx="24" ry="28"/>
+              <path d="M88 78 L112 78 C118 86 140 88 150 96 L164 190 L152 194 L138 122 L134 190 L132 372 L106 372 L102 215 L98 215 L94 372 L68 372 L66 190 L62 122 L48 194 L36 190 L50 96 C60 88 82 86 88 78 Z"/>
+            </g>
+            <g class="over">
+              <ellipse cx="100" cy="46" rx="24" ry="28"/>
+              <path d="M88 78 L112 78 C118 86 140 88 150 96 L164 190 L152 194 L138 122 L134 190 L132 372 L106 372 L102 215 L98 215 L94 372 L68 372 L66 190 L62 122 L48 194 L36 190 L50 96 C60 88 82 86 88 78 Z"/>
+            </g>
+          </svg>
+
+          <svg class="guide hidden" id="guideSide" viewBox="0 0 200 400" preserveAspectRatio="xMidYMid meet">
+            <g class="under">
+              <ellipse cx="100" cy="46" rx="22" ry="28"/>
+              <path d="M90 78 L110 78 C124 90 128 120 126 150 L124 200 L120 372 L86 372 L84 200 C78 160 76 110 90 78 Z"/>
+            </g>
+            <g class="over">
+              <ellipse cx="100" cy="46" rx="22" ry="28"/>
+              <path d="M90 78 L110 78 C124 90 128 120 126 150 L124 200 L120 372 L86 372 L84 200 C78 160 76 110 90 78 Z"/>
+            </g>
+          </svg>
+
+          <div class="msg" id="camMsg">カメラを起動しています…</div>
+          <div class="flash" id="flash"></div>
+        </div>
+      </div>
+
+      <label class="title">撮影する向き</label>
+      <div class="labels" id="labels">
+        <button type="button" data-label="正面" class="on">正面</button>
+        <button type="button" data-label="横">横</button>
+        <button type="button" data-label="後ろ">後ろ</button>
+        <button type="button" data-label="その他">その他</button>
+      </div>
+
+      <button class="btn btn-shoot" id="shootBtn" disabled>📷 撮影する</button>
+
+      <!-- 画面内カメラが使えないときの予備 -->
+      <button class="btn btn-sub hidden" id="fallbackBtn">標準カメラで撮影する（枠なし）</button>
+      <input type="file" id="fileInput" accept="image/*" capture="environment">
+    </div>
+
+    <div class="card">
+      <label class="title">保存した写真</label>
+      <ul class="list" id="photoList"></ul>
+      <div class="empty" id="emptyMsg">まだありません</div>
+    </div>
+
+    <button class="btn btn-sub" id="finishBtn">この顧客の撮影を終了する</button>
+  </div>
+
+</div>
+
+<script>
+  // 保存する写真の、長い辺の最大サイズ（ピクセル）
+  var MAX_SIDE = 2000;
+  // JPEGの画質（0〜1）
+  var JPEG_QUALITY = 0.85;
+  // カメラ映像を画面の高さの何割まで使うか
+  var STAGE_HEIGHT_RATIO = 0.6;
+  // 保存の応答を待つ時間（ミリ秒）
+  var SAVE_TIMEOUT = 90000;
+
+  var currentId = '';
+  var currentLabel = '正面';
+  var sendingCount = 0;
+  var stream = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var video = $('video');
+
+  function show(screenId) {
+    ['screenWait', 'screenNoBridge', 'screenId', 'screenShoot'].forEach(function (s) {
+      $(s).classList.toggle('hidden', s !== screenId);
+    });
+    window.scrollTo(0, 0);
+  }
+
+  // ---- 入口アプリ（GAS）との連絡 ----
+  // 写真の保存は、このページを開いた入口アプリのタブに頼みます。
+  var connected = false;
+  var bridgeOrigin = '';
+  var pending = {};
+  var reqSeq = 0;
+  var GAS_ORIGIN = /^https:\/\/[a-z0-9-]+\.googleusercontent\.com$/;
+
+  window.addEventListener('message', function (ev) {
+    // 入口アプリ以外からの連絡は無視する
+    if (!window.opener || ev.source !== window.opener) return;
+    if (!GAS_ORIGIN.test(ev.origin)) return;
+    var d = ev.data || {};
+
+    if (d.type === 'mp-hello') {
+      bridgeOrigin = ev.origin;
+      if (!connected) {
+        connected = true;
+        show('screenId');
+      }
+      return;
+    }
+
+    if (d.type === 'mp-result' && pending[d.reqId]) {
+      var p = pending[d.reqId];
+      delete pending[d.reqId];
+      clearTimeout(p.timer);
+      if (d.ok) {
+        p.resolve(d);
+      } else {
+        p.reject(new Error(d.error || '保存先でエラーが起きました'));
+      }
+    }
+  });
+
+  function connect() {
+    if (!window.opener) {
+      $('bridgeDetail').textContent = '【原因の手がかり】開いた元の画面が見つかりません（opener なし）';
+      show('screenNoBridge');
+      return;
+    }
+    try {
+      window.opener.postMessage({ type: 'mp-ready' }, '*');   // 写真などの中身は含まない合図だけ
+    } catch (e) { /* 下のタイムアウトで案内する */ }
+    setTimeout(function () {
+      if (!connected) {
+        $('bridgeDetail').textContent = '【原因の手がかり】入口アプリから返事がありません（応答なし）';
+        show('screenNoBridge');
+      }
+    }, 5000);
+  }
+
+  function callSave(id, label, image) {
+    return new Promise(function (resolve, reject) {
+      if (!window.opener || window.opener.closed || !bridgeOrigin) {
+        reject(new Error('入口アプリのタブが閉じられています。このタブを閉じて、入口アプリから開き直してください'));
+        return;
+      }
+      var reqId = String(++reqSeq);
+      var timer = setTimeout(function () {
+        delete pending[reqId];
+        reject(new Error('保存の応答がありません。入口アプリのタブが開いているか確認してください'));
+      }, SAVE_TIMEOUT);
+      pending[reqId] = { resolve: resolve, reject: reject, timer: timer };
+      window.opener.postMessage(
+        { type: 'mp-save', reqId: reqId, customerId: id, label: label, image: image },
+        bridgeOrigin
+      );
+    });
+  }
+
+  // ---- 画面1：ID入力 ----
+  $('startBtn').addEventListener('click', startShooting);
+  $('customerId').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') startShooting();
+  });
+
+  function startShooting() {
+    var id = $('customerId').value.trim();
+    if (!id) {
+      $('idError').textContent = '顧客IDを入力してください。';
+      return;
+    }
+    if (!/^[A-Za-z0-9_-]{1,30}$/.test(id)) {
+      $('idError').textContent = '顧客IDは半角英数字で入力してください。';
+      return;
+    }
+    $('idError').textContent = '';
+    currentId = id;
+    $('idDisplay').textContent = id;
+    $('photoList').innerHTML = '';
+    $('emptyMsg').classList.remove('hidden');
+    selectLabel('正面');
+    $('customerId').blur();
+    show('screenShoot');
+    startCamera();
+  }
+
+  // ---- カメラの起動・停止 ----
+  function startCamera() {
+    $('camMsg').textContent = 'カメラを起動しています…';
+    $('camMsg').classList.remove('hidden');
+    $('shootBtn').disabled = true;
+    $('fallbackBtn').classList.add('hidden');
+    fitStage();
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      cameraFailed(null);
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: {
+        facingMode: { ideal: 'environment' },   // 背面カメラ
+        width: { ideal: 3840 },
+        height: { ideal: 2160 }
+      }
+    }).then(function (s) {
+      stream = s;
+      video.srcObject = s;
+      return video.play();
+    }).then(function () {
+      $('camMsg').classList.add('hidden');
+      $('shootBtn').disabled = false;
+      fitStage();
+    }).catch(function (err) {
+      cameraFailed(err);
+    });
+  }
+
+  function cameraFailed(err) {
+    stopCamera();
+    var detail = err ? (err.name + '：' + err.message) : 'このブラウザは画面内カメラに対応していません';
+    $('camMsg').innerHTML =
+      '<div>画面内カメラを起動できませんでした。<br>' +
+      'カメラの使用を「許可」にしているか確認してください。<br>' +
+      '下のボタンから標準カメラでも撮影できます。</div>' +
+      '<div id="errDetail" style="font-size:14px;opacity:.85;margin-top:12px"></div>';
+    $('errDetail').textContent = '【原因の手がかり】' + detail;
+    $('camMsg').classList.remove('hidden');
+    $('shootBtn').disabled = true;
+    $('fallbackBtn').classList.remove('hidden');
+  }
+
+  function stopCamera() {
+    if (stream) {
+      stream.getTracks().forEach(function (t) { t.stop(); });
+      stream = null;
+    }
+    video.srcObject = null;
+  }
+
+  // カメラ映像の縦横比に合わせて表示枠の大きさを決める
+  function fitStage() {
+    var vw = video.videoWidth || 3;
+    var vh = video.videoHeight || 4;
+    var ratio = vw / vh;
+    var availW = $('stage').parentNode.clientWidth;
+    if (!availW) return;
+    var maxH = window.innerHeight * STAGE_HEIGHT_RATIO;
+    var w = Math.min(availW, maxH * ratio);
+    $('stage').style.width = Math.round(w) + 'px';
+    $('stage').style.height = Math.round(w / ratio) + 'px';
+  }
+  video.addEventListener('loadedmetadata', fitStage);
+  video.addEventListener('resize', fitStage);       // iPadを回転したとき
+  window.addEventListener('resize', fitStage);
+
+  // ---- 向きの選択（枠の形も切り替える）----
+  $('labels').addEventListener('click', function (e) {
+    var btn = e.target.closest('button');
+    if (btn) selectLabel(btn.dataset.label);
+  });
+
+  function selectLabel(label) {
+    currentLabel = label;
+    var buttons = $('labels').querySelectorAll('button');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].classList.toggle('on', buttons[i].dataset.label === label);
+    }
+    $('guideFront').classList.toggle('hidden', !(label === '正面' || label === '後ろ'));
+    $('guideSide').classList.toggle('hidden', label !== '横');
+  }
+
+  // ---- 撮影（画面内カメラ）----
+  $('shootBtn').addEventListener('click', function () {
+    if (!stream || !video.videoWidth) return;
+
+    var w = video.videoWidth;
+    var h = video.videoHeight;
+    var scale = Math.min(1, MAX_SIDE / Math.max(w, h));
+    var canvas = document.createElement('canvas');
+    canvas.width = Math.round(w * scale);
+    canvas.height = Math.round(h * scale);
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    var dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
+
+    // 撮れたことが分かるよう画面を一瞬光らせる
+    $('flash').classList.add('on');
+    setTimeout(function () { $('flash').classList.remove('on'); }, 60);
+
+    upload(dataUrl, currentId, currentLabel);
+  });
+
+  // ---- 撮影（予備：標準カメラ）----
+  $('fallbackBtn').addEventListener('click', function () {
+    $('fileInput').click();
+  });
+
+  $('fileInput').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    this.value = '';
+    if (!file) return;
+    var id = currentId;
+    var label = currentLabel;
+    shrinkImage(file).then(function (dataUrl) {
+      upload(dataUrl, id, label);
+    }).catch(function () {
+      var row = addRow(label);
+      row.st.textContent = '× 写真を読み込めませんでした。もう一度撮影してください';
+      row.st.className = 'st fail';
+    });
+  });
+
+  function shrinkImage(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var image = new Image();
+      image.onload = function () {
+        var w = image.naturalWidth;
+        var h = image.naturalHeight;
+        var scale = Math.min(1, MAX_SIDE / Math.max(w, h));
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.round(w * scale);
+        canvas.height = Math.round(h * scale);
+        canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', JPEG_QUALITY));
+      };
+      image.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error('load error'));
+      };
+      image.src = url;
+    });
+  }
+
+  // ---- ドライブへ保存（入口アプリ経由）----
+  function upload(dataUrl, id, label) {
+    var row = addRow(label);
+    row.img.src = dataUrl;
+    sendingCount++;
+    callSave(id, label, dataUrl.split(',')[1]).then(function (res) {
+      row.name.textContent = res.fileName;
+      row.st.textContent = '✓ 保存しました';
+      row.st.className = 'st done';
+    }).catch(function (err) {
+      row.st.textContent = '× 保存できませんでした（' + err.message + '）';
+      row.st.className = 'st fail';
+    }).then(function () {
+      sendingCount--;
+    });
+  }
+
+  // 保存一覧に1行追加する
+  function addRow(label) {
+    $('emptyMsg').classList.add('hidden');
+    var li = document.createElement('li');
+    var img = document.createElement('img');
+    var info = document.createElement('div');
+    info.className = 'info';
+    var name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = label;
+    var st = document.createElement('div');
+    st.className = 'st sending';
+    st.textContent = '保存中…';
+    info.appendChild(name);
+    info.appendChild(st);
+    li.appendChild(img);
+    li.appendChild(info);
+    $('photoList').insertBefore(li, $('photoList').firstChild);
+    return { img: img, name: name, st: st };
+  }
+
+  // ---- 終了 ----
+  $('finishBtn').addEventListener('click', function () {
+    if (sendingCount > 0) {
+      $('finishBtn').textContent = '保存中の写真があります。少し待ってからもう一度押してください';
+      setTimeout(function () {
+        $('finishBtn').textContent = 'この顧客の撮影を終了する';
+      }, 3000);
+      return;
+    }
+    stopCamera();
+    currentId = '';
+    $('customerId').value = '';
+    show('screenId');
+  });
+
+  // ---- 起動 ----
+  connect();
+</script>
+</body>
+</html>
