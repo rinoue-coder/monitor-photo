@@ -83,7 +83,23 @@
       width: 100%;
       height: 100%;
       pointer-events: none;
+      transform: translateY(var(--gy, 0%)) scale(var(--gs, 1));
+      transform-origin: 50% 50%;
     }
+    .adjust { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .adjust-title { font-size: 15px; color: #50606f; font-weight: 600; margin-right: 4px; }
+    .adjust button {
+      flex: 1;
+      min-width: 86px;
+      border: 2px solid #c5ced8;
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px 4px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #1c2733;
+    }
+    .adjust button:active { background: #e4e9ee; }
     .guide .under { fill: none; stroke: rgba(0,0,0,.55); stroke-width: 7; stroke-linejoin: round; }
     .guide .over  { fill: none; stroke: #fff; stroke-width: 3; stroke-dasharray: 10 7; stroke-linejoin: round; }
     .stage .msg {
@@ -246,39 +262,39 @@
 
           <!-- 人型の枠（写真には写りません） -->
           <!-- 正面・後ろ用：腕を斜め下に開き、足を肩幅に開いた姿勢 -->
-          <svg class="guide" id="guideFront" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet">
+          <svg class="guide" id="guideFront" viewBox="30 0 240 400" preserveAspectRatio="xMidYMid meet">
             <g class="under">
               <ellipse cx="150" cy="111" rx="16" ry="19"/>
-              <path d="M142 132 L158 132 C164 140 174 143 182 148 L224 250 L212 253 L172 174 L176 205 L186 242 L182 300 L184 360 L192 372 L164 372 L168 360 L162 300 L150 264 L138 300 L132 360 L136 372 L108 372 L116 360 L118 300 L114 242 L124 205 L128 174 L88 253 L76 250 L118 148 C126 143 136 140 142 132 Z"/>
+              <path d="M142 132 L158 132 C164 141 174 144 184 149 L228 246 L224 256 L210 254 L170 176 L174 206 L186 244 L189 300 L188 360 L196 372 L166 372 L170 360 L163 300 L150 268 L137 300 L130 360 L134 372 L104 372 L112 360 L111 300 L114 244 L126 206 L130 176 L90 254 L76 256 L72 246 L116 149 C126 144 136 141 142 132 Z"/>
             </g>
             <g class="over">
               <ellipse cx="150" cy="111" rx="16" ry="19"/>
-              <path d="M142 132 L158 132 C164 140 174 143 182 148 L224 250 L212 253 L172 174 L176 205 L186 242 L182 300 L184 360 L192 372 L164 372 L168 360 L162 300 L150 264 L138 300 L132 360 L136 372 L108 372 L116 360 L118 300 L114 242 L124 205 L128 174 L88 253 L76 250 L118 148 C126 143 136 140 142 132 Z"/>
+              <path d="M142 132 L158 132 C164 141 174 144 184 149 L228 246 L224 256 L210 254 L170 176 L174 206 L186 244 L189 300 L188 360 L196 372 L166 372 L170 360 L163 300 L150 268 L137 300 L130 360 L134 372 L104 372 L112 360 L111 300 L114 244 L126 206 L130 176 L90 254 L76 256 L72 246 L116 149 C126 144 136 141 142 132 Z"/>
             </g>
           </svg>
 
           <!-- 左向き用：画面の左を向き、両腕を前に伸ばした姿勢 -->
-          <svg class="guide hidden" id="guideLeft" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet">
+          <svg class="guide hidden" id="guideLeft" viewBox="30 0 240 400" preserveAspectRatio="xMidYMid meet">
             <g class="under">
               <ellipse cx="146" cy="111" rx="17" ry="19"/>
-              <path d="M140 132 L156 132 C164 140 170 150 170 162 L164 205 C170 220 178 235 176 250 L168 300 L166 356 L170 372 L126 372 L142 358 L144 300 L136 250 L132 215 L138 172 L86 170 L80 160 L86 150 L138 146 Z"/>
+              <path d="M140 132 L158 132 C164 138 168 144 168 152 L168 205 L173 245 L168 290 L167 335 L166 372 L124 372 L126 364 L146 356 L146 300 L140 250 L136 215 L135 180 L136 170 L82 170 L76 160 L82 150 L140 146 Z"/>
             </g>
             <g class="over">
               <ellipse cx="146" cy="111" rx="17" ry="19"/>
-              <path d="M140 132 L156 132 C164 140 170 150 170 162 L164 205 C170 220 178 235 176 250 L168 300 L166 356 L170 372 L126 372 L142 358 L144 300 L136 250 L132 215 L138 172 L86 170 L80 160 L86 150 L138 146 Z"/>
+              <path d="M140 132 L158 132 C164 138 168 144 168 152 L168 205 L173 245 L168 290 L167 335 L166 372 L124 372 L126 364 L146 356 L146 300 L140 250 L136 215 L135 180 L136 170 L82 170 L76 160 L82 150 L140 146 Z"/>
             </g>
           </svg>
 
           <!-- 右向き用：左向きを左右反転したもの -->
-          <svg class="guide hidden" id="guideRight" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet">
+          <svg class="guide hidden" id="guideRight" viewBox="30 0 240 400" preserveAspectRatio="xMidYMid meet">
             <g transform="translate(300,0) scale(-1,1)">
               <g class="under">
                 <ellipse cx="146" cy="111" rx="17" ry="19"/>
-                <path d="M140 132 L156 132 C164 140 170 150 170 162 L164 205 C170 220 178 235 176 250 L168 300 L166 356 L170 372 L126 372 L142 358 L144 300 L136 250 L132 215 L138 172 L86 170 L80 160 L86 150 L138 146 Z"/>
+                <path d="M140 132 L158 132 C164 138 168 144 168 152 L168 205 L173 245 L168 290 L167 335 L166 372 L124 372 L126 364 L146 356 L146 300 L140 250 L136 215 L135 180 L136 170 L82 170 L76 160 L82 150 L140 146 Z"/>
               </g>
               <g class="over">
                 <ellipse cx="146" cy="111" rx="17" ry="19"/>
-                <path d="M140 132 L156 132 C164 140 170 150 170 162 L164 205 C170 220 178 235 176 250 L168 300 L166 356 L170 372 L126 372 L142 358 L144 300 L136 250 L132 215 L138 172 L86 170 L80 160 L86 150 L138 146 Z"/>
+                <path d="M140 132 L158 132 C164 138 168 144 168 152 L168 205 L173 245 L168 290 L167 335 L166 372 L124 372 L126 364 L146 356 L146 300 L140 250 L136 215 L135 180 L136 170 L82 170 L76 160 L82 150 L140 146 Z"/>
               </g>
             </g>
           </svg>
@@ -287,6 +303,15 @@
           <div class="flash" id="flash"></div>
           <div class="toast" id="toast">✓ 撮影しました</div>
         </div>
+      </div>
+
+      <div class="adjust" id="adjust">
+        <span class="adjust-title">枠の調整</span>
+        <button type="button" data-adj="smaller">小さく</button>
+        <button type="button" data-adj="bigger">大きく</button>
+        <button type="button" data-adj="up">↑ 上へ</button>
+        <button type="button" data-adj="down">↓ 下へ</button>
+        <button type="button" data-adj="reset">元に戻す</button>
       </div>
 
       <label class="title">撮影する向き</label>
@@ -773,6 +798,43 @@
   }
 
   $('nextBtn').addEventListener('click', backToIdScreen);
+
+  // ---- 人型の枠の大きさ・位置の調整（このiPadに記憶する）----
+  var guide = { scale: 1, y: 0 };
+
+  function loadGuide() {
+    try {
+      var s = JSON.parse(localStorage.getItem('monitorPhoto.guide') || 'null');
+      if (s && s.scale > 0) {
+        guide.scale = Number(s.scale) || 1;
+        guide.y = Number(s.y) || 0;
+      }
+    } catch (e) { /* 読み込めなければ初期値のまま */ }
+  }
+  function saveGuide() {
+    try { localStorage.setItem('monitorPhoto.guide', JSON.stringify(guide)); } catch (e) { /* 記憶できなくても今回は使える */ }
+  }
+  function applyGuide() {
+    $('stage').style.setProperty('--gs', String(guide.scale));
+    $('stage').style.setProperty('--gy', guide.y + '%');
+  }
+
+  $('adjust').addEventListener('click', function (e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    var a = btn.dataset.adj;
+    if (a === 'bigger')  guide.scale = Math.min(1.8, guide.scale * 1.04);
+    if (a === 'smaller') guide.scale = Math.max(0.5, guide.scale / 1.04);
+    if (a === 'up')      guide.y = Math.max(-40, guide.y - 1.5);
+    if (a === 'down')    guide.y = Math.min(40, guide.y + 1.5);
+    if (a === 'reset')   { guide.scale = 1; guide.y = 0; }
+    guide.scale = Math.round(guide.scale * 1000) / 1000;
+    applyGuide();
+    saveGuide();
+  });
+
+  loadGuide();
+  applyGuide();
 
   // ---- 起動 ----
   connect();
