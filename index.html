@@ -108,14 +108,63 @@
       transition: opacity .25s;
     }
     .stage .flash.on { opacity: .85; transition: none; }
+    .stage .toast {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(11,128,67,.92);
+      color: #fff;
+      font-size: 26px;
+      font-weight: 700;
+      padding: 16px 28px;
+      border-radius: 14px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s;
+    }
+    .stage .toast.on { opacity: 1; transition: none; }
 
-    .labels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+    /* 撮影終了後の完了画面 */
+    .done-mark { font-size: 64px; text-align: center; line-height: 1; margin: 8px 0 12px; }
+    .done-title { font-size: 24px; font-weight: 700; text-align: center; margin: 0 0 18px; color: #0b8043; }
+    .done-title.warn { color: #c5221f; }
+    .done-info { background: #f3f5f7; border-radius: 12px; padding: 14px 18px; margin-bottom: 18px; line-height: 1.9; }
+    .done-info strong { font-size: 22px; }
+    .done-warn { color: #c5221f; font-weight: 600; line-height: 1.6; margin: 0 0 18px; }
+
+    /* Before / After の選択 */
+    .phases { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0 4px; }
+    .phases button {
+      border: 2px solid #c5ced8;
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px 4px;
+      font-size: 24px;
+      font-weight: 700;
+      color: #1c2733;
+    }
+    .phases button.on { border-color: #1a73e8; background: #e8f0fe; color: #1a73e8; }
+    .badge {
+      display: inline-block;
+      background: #1a73e8;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 999px;
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    .labels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
     .labels button {
       border: 2px solid #c5ced8;
       background: #fff;
       border-radius: 12px;
-      padding: 14px 4px;
-      font-size: 20px;
+      padding: 14px 2px;
+      font-size: 18px;
       font-weight: 600;
       color: #1c2733;
     }
@@ -170,6 +219,13 @@
       <label class="title" for="customerId">顧客ID</label>
       <input type="text" id="customerId" inputmode="numeric" autocomplete="off"
              autocapitalize="off" autocorrect="off" placeholder="例：12345">
+
+      <label class="title" style="margin-top:20px">撮影区分</label>
+      <div class="phases" id="phases">
+        <button type="button" data-phase="Before">Before</button>
+        <button type="button" data-phase="After">After</button>
+      </div>
+
       <div class="error" id="idError"></div>
       <button class="btn btn-primary" id="startBtn">撮影を始める</button>
     </div>
@@ -181,6 +237,7 @@
       <div class="id-box">
         <small>撮影中の顧客ID</small>
         <strong id="idDisplay"></strong>
+        <span class="badge" id="phaseBadge"></span>
       </div>
 
       <div class="stage-outer">
@@ -188,37 +245,55 @@
           <video id="video" playsinline autoplay muted></video>
 
           <!-- 人型の枠（写真には写りません） -->
-          <svg class="guide" id="guideFront" viewBox="0 0 200 400" preserveAspectRatio="xMidYMid meet">
+          <!-- 正面・後ろ用：腕を斜め下に開き、足を肩幅に開いた姿勢 -->
+          <svg class="guide" id="guideFront" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet">
             <g class="under">
-              <ellipse cx="100" cy="46" rx="24" ry="28"/>
-              <path d="M88 78 L112 78 C118 86 140 88 150 96 L164 190 L152 194 L138 122 L134 190 L132 372 L106 372 L102 215 L98 215 L94 372 L68 372 L66 190 L62 122 L48 194 L36 190 L50 96 C60 88 82 86 88 78 Z"/>
+              <ellipse cx="150" cy="111" rx="16" ry="19"/>
+              <path d="M142 132 L158 132 C164 140 174 143 182 148 L224 250 L212 253 L172 174 L176 205 L186 242 L182 300 L184 360 L192 372 L164 372 L168 360 L162 300 L150 264 L138 300 L132 360 L136 372 L108 372 L116 360 L118 300 L114 242 L124 205 L128 174 L88 253 L76 250 L118 148 C126 143 136 140 142 132 Z"/>
             </g>
             <g class="over">
-              <ellipse cx="100" cy="46" rx="24" ry="28"/>
-              <path d="M88 78 L112 78 C118 86 140 88 150 96 L164 190 L152 194 L138 122 L134 190 L132 372 L106 372 L102 215 L98 215 L94 372 L68 372 L66 190 L62 122 L48 194 L36 190 L50 96 C60 88 82 86 88 78 Z"/>
+              <ellipse cx="150" cy="111" rx="16" ry="19"/>
+              <path d="M142 132 L158 132 C164 140 174 143 182 148 L224 250 L212 253 L172 174 L176 205 L186 242 L182 300 L184 360 L192 372 L164 372 L168 360 L162 300 L150 264 L138 300 L132 360 L136 372 L108 372 L116 360 L118 300 L114 242 L124 205 L128 174 L88 253 L76 250 L118 148 C126 143 136 140 142 132 Z"/>
             </g>
           </svg>
 
-          <svg class="guide hidden" id="guideSide" viewBox="0 0 200 400" preserveAspectRatio="xMidYMid meet">
+          <!-- 左向き用：画面の左を向き、両腕を前に伸ばした姿勢 -->
+          <svg class="guide hidden" id="guideLeft" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet">
             <g class="under">
-              <ellipse cx="100" cy="46" rx="22" ry="28"/>
-              <path d="M90 78 L110 78 C124 90 128 120 126 150 L124 200 L120 372 L86 372 L84 200 C78 160 76 110 90 78 Z"/>
+              <ellipse cx="146" cy="111" rx="17" ry="19"/>
+              <path d="M140 132 L156 132 C164 140 170 150 170 162 L164 205 C170 220 178 235 176 250 L168 300 L166 356 L170 372 L126 372 L142 358 L144 300 L136 250 L132 215 L138 172 L86 170 L80 160 L86 150 L138 146 Z"/>
             </g>
             <g class="over">
-              <ellipse cx="100" cy="46" rx="22" ry="28"/>
-              <path d="M90 78 L110 78 C124 90 128 120 126 150 L124 200 L120 372 L86 372 L84 200 C78 160 76 110 90 78 Z"/>
+              <ellipse cx="146" cy="111" rx="17" ry="19"/>
+              <path d="M140 132 L156 132 C164 140 170 150 170 162 L164 205 C170 220 178 235 176 250 L168 300 L166 356 L170 372 L126 372 L142 358 L144 300 L136 250 L132 215 L138 172 L86 170 L80 160 L86 150 L138 146 Z"/>
+            </g>
+          </svg>
+
+          <!-- 右向き用：左向きを左右反転したもの -->
+          <svg class="guide hidden" id="guideRight" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet">
+            <g transform="translate(300,0) scale(-1,1)">
+              <g class="under">
+                <ellipse cx="146" cy="111" rx="17" ry="19"/>
+                <path d="M140 132 L156 132 C164 140 170 150 170 162 L164 205 C170 220 178 235 176 250 L168 300 L166 356 L170 372 L126 372 L142 358 L144 300 L136 250 L132 215 L138 172 L86 170 L80 160 L86 150 L138 146 Z"/>
+              </g>
+              <g class="over">
+                <ellipse cx="146" cy="111" rx="17" ry="19"/>
+                <path d="M140 132 L156 132 C164 140 170 150 170 162 L164 205 C170 220 178 235 176 250 L168 300 L166 356 L170 372 L126 372 L142 358 L144 300 L136 250 L132 215 L138 172 L86 170 L80 160 L86 150 L138 146 Z"/>
+              </g>
             </g>
           </svg>
 
           <div class="msg" id="camMsg">カメラを起動しています…</div>
           <div class="flash" id="flash"></div>
+          <div class="toast" id="toast">✓ 撮影しました</div>
         </div>
       </div>
 
       <label class="title">撮影する向き</label>
       <div class="labels" id="labels">
         <button type="button" data-label="正面" class="on">正面</button>
-        <button type="button" data-label="横">横</button>
+        <button type="button" data-label="左向き">左向き</button>
+        <button type="button" data-label="右向き">右向き</button>
         <button type="button" data-label="後ろ">後ろ</button>
         <button type="button" data-label="その他">その他</button>
       </div>
@@ -239,6 +314,21 @@
     <button class="btn btn-sub" id="finishBtn">この顧客の撮影を終了する</button>
   </div>
 
+  <!-- 画面3：撮影終了（アップロード完了の表示） -->
+  <div id="screenDone" class="hidden">
+    <div class="card">
+      <div class="done-mark" id="doneMark">✅</div>
+      <p class="done-title" id="doneTitle">ドライブへのアップロードが完了しました</p>
+      <div class="done-info">
+        顧客ID：<strong id="doneId"></strong><br>
+        撮影区分：<strong id="donePhase"></strong><br>
+        保存した写真：<strong id="doneCount"></strong>
+      </div>
+      <p class="done-warn hidden" id="doneWarn"></p>
+      <button class="btn btn-primary" id="nextBtn">次の顧客を撮影する</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -252,15 +342,61 @@
   var SAVE_TIMEOUT = 90000;
 
   var currentId = '';
+  var currentPhase = '';   // 'Before' または 'After'
   var currentLabel = '正面';
   var sendingCount = 0;
+  var savedCount = 0;      // この顧客で保存できた枚数
+  var failedCount = 0;     // この顧客で保存できなかった枚数
+  var finishing = false;   // 「終了する」が押され、保存完了を待っている状態
   var stream = null;
+
+  // ---- シャッター音（音声ファイルを使わず、その場で音を作る）----
+  var audioCtx = null;
+  function playShutterSound() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var now = audioCtx.currentTime;
+      shutterClick(now);          // カ
+      shutterClick(now + 0.09);   // シャ
+    } catch (e) { /* 音が出せなくても撮影は続ける */ }
+  }
+  function shutterClick(startAt) {
+    var length = Math.floor(audioCtx.sampleRate * 0.06);
+    var buffer = audioCtx.createBuffer(1, length, audioCtx.sampleRate);
+    var data = buffer.getChannelData(0);
+    for (var i = 0; i < length; i++) {
+      // 雑音を急速に小さくして「カシャ」という短い音にする
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3);
+    }
+    var src = audioCtx.createBufferSource();
+    src.buffer = buffer;
+    var filter = audioCtx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 1200;
+    var gain = audioCtx.createGain();
+    gain.gain.value = 0.9;
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    src.start(startAt);
+  }
+
+  // ---- 「撮影しました」の表示 ----
+  var toastTimer = null;
+  function showShotToast() {
+    $('toast').classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { $('toast').classList.remove('on'); }, 900);
+  }
 
   var $ = function (id) { return document.getElementById(id); };
   var video = $('video');
 
   function show(screenId) {
-    ['screenWait', 'screenNoBridge', 'screenId', 'screenShoot'].forEach(function (s) {
+    ['screenWait', 'screenNoBridge', 'screenId', 'screenShoot', 'screenDone'].forEach(function (s) {
       $(s).classList.toggle('hidden', s !== screenId);
     });
     window.scrollTo(0, 0);
@@ -318,7 +454,7 @@
     }, 5000);
   }
 
-  function callSave(id, label, image) {
+  function callSave(id, phase, label, image) {
     return new Promise(function (resolve, reject) {
       if (!window.opener || window.opener.closed || !bridgeOrigin) {
         reject(new Error('入口アプリのタブが閉じられています。このタブを閉じて、入口アプリから開き直してください'));
@@ -331,13 +467,27 @@
       }, SAVE_TIMEOUT);
       pending[reqId] = { resolve: resolve, reject: reject, timer: timer };
       window.opener.postMessage(
-        { type: 'mp-save', reqId: reqId, customerId: id, label: label, image: image },
+        { type: 'mp-save', reqId: reqId, customerId: id, phase: phase, label: label, image: image },
         bridgeOrigin
       );
     });
   }
 
-  // ---- 画面1：ID入力 ----
+  // ---- 画面1：ID入力と Before / After の選択 ----
+  $('phases').addEventListener('click', function (e) {
+    var btn = e.target.closest('button');
+    if (btn) selectPhase(btn.dataset.phase);
+  });
+
+  function selectPhase(phase) {
+    currentPhase = phase;
+    var buttons = $('phases').querySelectorAll('button');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].classList.toggle('on', buttons[i].dataset.phase === phase);
+    }
+    if (phase) $('idError').textContent = '';
+  }
+
   $('startBtn').addEventListener('click', startShooting);
   $('customerId').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') startShooting();
@@ -353,11 +503,21 @@
       $('idError').textContent = '顧客IDは半角英数字で入力してください。';
       return;
     }
+    if (currentPhase !== 'Before' && currentPhase !== 'After') {
+      $('idError').textContent = 'Before か After を選んでください。';
+      return;
+    }
     $('idError').textContent = '';
     currentId = id;
     $('idDisplay').textContent = id;
+    $('phaseBadge').textContent = currentPhase;
     $('photoList').innerHTML = '';
     $('emptyMsg').classList.remove('hidden');
+    savedCount = 0;
+    failedCount = 0;
+    finishing = false;
+    $('finishBtn').disabled = false;
+    $('finishBtn').textContent = 'この顧客の撮影を終了する';
     selectLabel('正面');
     $('customerId').blur();
     show('screenShoot');
@@ -447,12 +607,17 @@
       buttons[i].classList.toggle('on', buttons[i].dataset.label === label);
     }
     $('guideFront').classList.toggle('hidden', !(label === '正面' || label === '後ろ'));
-    $('guideSide').classList.toggle('hidden', label !== '横');
+    $('guideLeft').classList.toggle('hidden', label !== '左向き');
+    $('guideRight').classList.toggle('hidden', label !== '右向き');
   }
 
   // ---- 撮影（画面内カメラ）----
   $('shootBtn').addEventListener('click', function () {
-    if (!stream || !video.videoWidth) return;
+    if (!stream || !video.videoWidth || finishing) return;
+
+    // 撮影の合図：シャッター音・画面が光る・「撮影しました」の表示
+    playShutterSound();
+    showShotToast();
 
     var w = video.videoWidth;
     var h = video.videoHeight;
@@ -518,15 +683,19 @@
     var row = addRow(label);
     row.img.src = dataUrl;
     sendingCount++;
-    callSave(id, label, dataUrl.split(',')[1]).then(function (res) {
+    callSave(id, currentPhase, label, dataUrl.split(',')[1]).then(function (res) {
       row.name.textContent = res.fileName;
       row.st.textContent = '✓ 保存しました';
       row.st.className = 'st done';
+      savedCount++;
     }).catch(function (err) {
       row.st.textContent = '× 保存できませんでした（' + err.message + '）';
       row.st.className = 'st fail';
+      failedCount++;
     }).then(function () {
       sendingCount--;
+      // 「終了する」が押されていて、全部の保存が終わったら完了画面へ
+      if (finishing && sendingCount === 0) showDone();
     });
   }
 
@@ -553,18 +722,57 @@
 
   // ---- 終了 ----
   $('finishBtn').addEventListener('click', function () {
+    if (finishing) return;
     if (sendingCount > 0) {
-      $('finishBtn').textContent = '保存中の写真があります。少し待ってからもう一度押してください';
-      setTimeout(function () {
-        $('finishBtn').textContent = 'この顧客の撮影を終了する';
-      }, 3000);
+      // 保存中の写真がある → 全部終わるまで待ってから完了画面を出す
+      finishing = true;
+      $('finishBtn').disabled = true;
+      $('finishBtn').textContent = 'ドライブに保存中です… 完了までお待ちください';
+      $('shootBtn').disabled = true;
       return;
     }
+    showDone();
+  });
+
+  // 撮影終了後の完了画面を出す
+  function showDone() {
+    finishing = false;
     stopCamera();
+
+    // 1枚も撮っていない場合は、そのままID入力に戻る
+    if (savedCount === 0 && failedCount === 0) {
+      backToIdScreen();
+      return;
+    }
+
+    $('doneId').textContent = currentId;
+    $('donePhase').textContent = currentPhase;
+    $('doneCount').textContent = savedCount + '枚';
+
+    if (failedCount === 0) {
+      $('doneMark').textContent = '✅';
+      $('doneTitle').textContent = 'ドライブへのアップロードが完了しました';
+      $('doneTitle').classList.remove('warn');
+      $('doneWarn').classList.add('hidden');
+    } else {
+      $('doneMark').textContent = '⚠️';
+      $('doneTitle').textContent = '保存できなかった写真があります';
+      $('doneTitle').classList.add('warn');
+      $('doneWarn').textContent =
+        failedCount + '枚がドライブに保存されていません。もう一度この顧客IDで撮影し直してください。';
+      $('doneWarn').classList.remove('hidden');
+    }
+    show('screenDone');
+  }
+
+  function backToIdScreen() {
     currentId = '';
+    selectPhase('');   // 次の顧客では Before / After を選び直してもらう
     $('customerId').value = '';
     show('screenId');
-  });
+  }
+
+  $('nextBtn').addEventListener('click', backToIdScreen);
 
   // ---- 起動 ----
   connect();
